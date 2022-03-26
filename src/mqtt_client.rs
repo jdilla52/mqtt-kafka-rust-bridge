@@ -70,7 +70,7 @@ impl MqttClient {
         }
         self.cli = Option::from(cli);
     }
-    pub async fn subscribe(&self) {
+    pub async fn subscribe(&self) -> bool {
         // add config to ignore or add specific topics
         let subscriptions = &["#"];
         let qos = &[1];
@@ -83,6 +83,7 @@ impl MqttClient {
         match resp {
             Ok(v) => {
                 let r = v.subscribe_many_response();
+                return true;
             }
             Err(e) => {
                 error!("Unable to subscribe: {:?} on topics {:?}", self.mqtt_addr,subscriptions);
@@ -123,8 +124,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_connection() {
-        env_logger::init();
-
         let mut client = MqttClient {
             mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
@@ -137,8 +136,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_reconnect() {
-        env_logger::init();
-
         let mut client = MqttClient {
             mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
@@ -152,5 +149,18 @@ mod tests {
         cli.disconnect(None);
         let reconnect = client.try_reconnect();
         assert!(reconnect);
+    }
+
+    #[tokio::test]
+    async fn test_subscription() {
+        let mut client = MqttClient {
+            mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
+            client_id: "test".to_string(),
+            cli: None,
+        };
+
+        client.build_mqtt_connection().await;
+        let valid = client.subscribe().await;
+        assert!(valid);
     }
 }

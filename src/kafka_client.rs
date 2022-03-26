@@ -10,7 +10,7 @@ use rdkafka::consumer::Consumer;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::producer::future_producer::OwnedDeliveryResult;
 
-struct KafkaClient {
+pub struct KafkaClient {
     brokers: String,
     producer: FutureProducer,
 }
@@ -29,12 +29,12 @@ impl KafkaClient {
         }
     }
 
-    pub async fn send_message(&self, topic: String, key: String, record: String) -> bool {
+    pub async fn send_message(&self, topic: String, key: String, record: &[u8]) -> bool {
         let record = FutureRecord::to(&topic)
             .key(&key)
-            .payload(&record);
+            .payload(record);
 
-        let produce_future = self.producer.send(record, Duration::from_millis(1)).await;
+        let produce_future = producer.send(record, Duration::from_millis(1)).await;
         return match produce_future {
             Ok(delivery) => {
                 debug!("Sent: {:?}", delivery);
@@ -72,7 +72,7 @@ mod tests {
     async fn test_message() {
         init();
         let j = KafkaClient::new("127.0.0.1:9092".into());
-        let out = j.send_message("test".to_string(), "test".to_string(), "hello kafka".to_string()).await;
+        let out = j.send_message("test".to_string(), "test".to_string(), "hello kafka".as_bytes()).await;
         assert!(out);
     }
 }

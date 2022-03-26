@@ -2,7 +2,7 @@ use log::{error, info};
 use paho_mqtt as mqtt;
 use paho_mqtt::async_client::AsyncClient;
 use paho_mqtt::{ConnectResponse, DeliveryToken, Message, ServerResponse};
-use std::process;
+use std::{process, thread};
 use std::time::Duration;
 
 struct MqttClient {
@@ -12,7 +12,7 @@ struct MqttClient {
 }
 
 impl MqttClient {
-    pub fn build_mqtt_connection(&mut self) {
+    pub async fn build_mqtt_connection(&mut self) {
         info!("rbot is connecting");
         let create_opts = mqtt::CreateOptionsBuilder::new()
             .server_uri(self.mqtt_addr.clone())
@@ -49,11 +49,11 @@ impl MqttClient {
             .finalize();
 
         let rsp: ServerResponse = match cli.connect(conn_opts).await {
-            Ok(r) => resp,
+            Ok(r) => r,
             Err(e) => {
-            error!("Unable to connect: {:?}", self.mqtt_addr);
-            eprintln!("Unable to connect: {:?}", self.mqtt_addr);
-            process::exit(1);
+                error!("Unable to connect: {:?}", self.mqtt_addr);
+                eprintln!("Unable to connect: {:?}", self.mqtt_addr);
+                process::exit(1);
             }
         };
 
@@ -63,29 +63,50 @@ impl MqttClient {
                     "Connected to: '{}' with MQTT version {}",
                     conn_rsp.server_uri, conn_rsp.mqtt_version
                 );
-            },
+            }
             _ => {
                 println!("existing session");
             }
         }
         self.cli = Option::from(cli);
     }
-    pub fn subscribe(&self) {
+    pub async fn subscribe(&self) {
+        // add config to ignore or add specific topics
         let subscriptions = &["#"];
         let qos = &[1];
-        let cli = self.cli.unwrap_or_else("please create a client");
+        let cli = self.cli.as_ref().unwrap_or_else(|| {
+            println!("cant subscribe without an mqtt client please create a client");
+            process::exit(1);
+        });
 
         let resp = cli.subscribe_many(subscriptions, qos).await;
         match resp {
-            Ok(v)=>{
-               let r = v.subscribe_many_response();
-            },
+            Ok(v) => {
+                let r = v.subscribe_many_response();
+            }
             Err(e) => {
-                error!("Unable to connect: {:?}", self.mqtt_addr);
-                eprintln!("Unable to connect: {:?}", self.mqtt_addr);
+                error!("Unable to subscribe: {:?} on topics {:?}", self.mqtt_addr,subscriptions);
+                eprintln!("Unable to subscribe: {:?} on topics {:?}", self.mqtt_addr,subscriptions);
                 process::exit(1);
             }
         }
+    }
+
+    fn try_reconnect(&self) -> bool {
+        let cli = self.cli.as_ref().unwrap_or_else(|| {
+            println!("cant reconnect without an mqtt client please create a client");
+            process::exit(1);
+        });
+        println!("Connection lost. Waiting to retry connection");
+        for _ in 0..12 {
+            thread::sleep(Duration::from_millis(5000));
+            if cli.reconnect().wait().is_ok() {
+                println!("Successfully reconnected");
+                return true;
+            }
+        }
+        println!("Unable to reconnect after several attempts.");
+        false
     }
 }
 

@@ -40,7 +40,7 @@ impl MqttClient {
             .finalize();
 
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
-            .ssl_options(ssl_opts)
+            // .ssl_options(ssl_opts)
             // .user_name("test_user")
             // .password("test_password")
             .keep_alive_interval(Duration::from_secs(20))
@@ -86,7 +86,7 @@ impl MqttClient {
             }
             Err(e) => {
                 error!("Unable to subscribe: {:?} on topics {:?}", self.mqtt_addr,subscriptions);
-                eprintln!("Unable to subscribe: {:?} on topics {:?}", self.mqtt_addr,subscriptions);
+                eprintln!("Unable to subscribe: {:?} on topics {:?}", self.mqtt_addr, subscriptions);
                 process::exit(1);
             }
         }
@@ -110,28 +110,47 @@ impl MqttClient {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
+    use std::any::TypeId;
     use super::*;
+
+
+    fn get_type_of<T: 'static>(_: &T) -> TypeId {
+        TypeId::of::<T>()
+    }
 
     #[tokio::test]
     async fn test_connection() {
         env_logger::init();
 
         let mut client = MqttClient {
-            mqtt_addr: "ssl://localhost:18883".to_string(),
-            client_id: "".to_string(),
+            mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
+            client_id: "test".to_string(),
             cli: None,
         };
 
-        let cli = client.build_mqtt_connection().await;
+        client.build_mqtt_connection().await;
+        assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(client.cli.as_ref().unwrap()));
+    }
 
-        // let msg = mqtt::MessRageBuilder::new()
-        //     .topic("test")R
-        //     .payload("hello")
-        //     .qos(1)
-        //     .finalize();
-        //
-        // cli.publish(msg);
+    #[tokio::test]
+    async fn test_reconnect() {
+        env_logger::init();
+
+        let mut client = MqttClient {
+            mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
+            client_id: "test".to_string(),
+            cli: None,
+        };
+
+        client.build_mqtt_connection().await;
+        assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(client.cli.as_ref().unwrap()));
+
+        let cli = client.cli.as_ref().unwrap();
+        cli.disconnect(None);
+        let reconnect = client.try_reconnect();
+        assert!(reconnect);
     }
 }

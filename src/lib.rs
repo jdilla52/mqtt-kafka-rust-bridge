@@ -1,4 +1,5 @@
 mod mqtt_client;
+mod kafka_client;
 
 #[cfg(test)]
 mod tests {

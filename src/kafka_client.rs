@@ -12,40 +12,45 @@ use rdkafka::producer::future_producer::OwnedDeliveryResult;
 
 struct KafkaClient {
     brokers: String,
-    producer: FutureProducer
+    producer: FutureProducer,
 }
 
 impl KafkaClient {
-    pub async fn send_ready_notification(&self, topic: String, record: String)
-                                         -> Result<(), Box<dyn Error + Send + Sync> >{
-
-        let record = FutureRecord::to(&topic)
-            .key("some key".into())
-            .payload(&record);
-
-        let produce_future = self.producer.send(record,Duration::from_millis(1)).await;
-        match produce_future {
-            Ok(delivery) => debug!("Sent: {:?}", delivery),
-            Err((e, _))=> error!("Error: {:?}", e),
-        }
-        Ok(())
-    }
-
-    pub fn new (brokers: String, ) -> KafkaClient {
+    pub fn new(brokers: String) -> KafkaClient {
         let producer: FutureProducer = ClientConfig::new()
             .set("bootstrap.servers", &brokers)
             .set("message.timeout.ms", "5000")
             .create()
             .expect("Producer creation error");
 
-
-        KafkaClient{
+        KafkaClient {
             brokers,
-            producer
+            producer,
         }
+    }
+
+    pub async fn send_message(&self, topic: String, key: String, record: String) -> bool {
+        let record = FutureRecord::to(&topic)
+            .key(&key)
+            .payload(&record);
+
+        let produce_future = self.producer.send(record, Duration::from_millis(1)).await;
+        return match produce_future {
+            Ok(delivery) => {
+                debug!("Sent: {:?}", delivery);
+                true
+            }
+            Err((e, _)) => {
+                error!("Error: {:?}", e);
+                false
+            }
+        };
     }
 }
 
+fn init() {
+    let _ = env_logger::builder().is_test(true).try_init();
+}
 
 #[cfg(test)]
 mod tests {
@@ -59,11 +64,15 @@ mod tests {
 
     #[test]
     fn test_create_producer() {
-        let j = KafkaClient::new("127.0.0.1:9092".into());
+        let client = KafkaClient::new("127.0.0.1:9092".into());
+        assert_eq!(TypeId::of::<FutureProducer>(), get_type_of(&client.producer));
     }
 
     #[tokio::test]
-    async fn test_connection() {
-
+    async fn test_message() {
+        init();
+        let j = KafkaClient::new("127.0.0.1:9092".into());
+        let out = j.send_message("test".to_string(), "test".to_string(), "hello kafka".to_string()).await;
+        assert!(out);
     }
 }

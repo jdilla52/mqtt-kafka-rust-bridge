@@ -1,7 +1,7 @@
 use log::{error, info};
 use paho_mqtt as mqtt;
 use paho_mqtt::async_client::AsyncClient;
-use paho_mqtt::{DeliveryToken, Message};
+use paho_mqtt::{ConnectResponse, DeliveryToken, Message, ServerResponse};
 use std::process;
 use std::time::Duration;
 
@@ -12,7 +12,7 @@ struct MqttClient {
 }
 
 impl MqttClient {
-    pub async fn build_mqtt_connection(&mut self) {
+    pub fn build_mqtt_connection(&mut self) {
         info!("rbot is connecting");
         let create_opts = mqtt::CreateOptionsBuilder::new()
             .server_uri(self.mqtt_addr.clone())
@@ -48,61 +48,52 @@ impl MqttClient {
             .will_message(lwt)
             .finalize();
 
-
-
-        let subscriptions = ["#"];
-
-        let qos = [1];
-
-        let resp = cli.connect(conn_opts).await;
-        // https://github.com/eclipse/paho.mqtt.rust/blob/master/examples/sync_consume.rs
-        match resp {
-            Ok(rsp) => {
-                if let Some(conn_rsp) = rsp.connect_response() {
-                    println!(
-                        "Connected to: '{}' with MQTT version {}",
-                        conn_rsp.server_uri, conn_rsp.mqtt_version
-                    );
-                    if !conn_rsp.session_present {
-                        // Register subscriptions on the server
-                        println!("Subscribing to topics with requested QoS: {:?}...", qos);
-                        // Initialize the consumer before connecting
-                        // cli.subscribe_many(&subscriptions, &qos)
-                        //     .and_then(|rsp| {
-                        //         rsp.subscribe_many_response()
-                        //             .ok_or(mqtt::Error::General("Bad response"))
-                        //     })
-                        //     .and_then(|vqos| {
-                        //         println!("QoS granted: {:?}", vqos);
-                        //         Ok(())
-                        //     })
-                        //     .unwrap_or_else(|err| {
-                        //         println!("Error subscribing to topics: {:?}", err);
-                        //         cli.disconnect(None).unwrap();
-                        //         process::exit(1);
-                        //     });
-                    }
-                    else {
-                        println!("using existing session");
-                    }
-                }
+        let rsp: ServerResponse = match cli.connect(conn_opts).await {
+            Ok(r) => resp,
+            Err(e) => {
+            error!("Unable to connect: {:?}", self.mqtt_addr);
+            eprintln!("Unable to connect: {:?}", self.mqtt_addr);
+            process::exit(1);
             }
+        };
+
+        match rsp.connect_response() {
+            Some(conn_rsp) => {
+                println!(
+                    "Connected to: '{}' with MQTT version {}",
+                    conn_rsp.server_uri, conn_rsp.mqtt_version
+                );
+            },
+            _ => {
+                println!("existing session");
+            }
+        }
+        self.cli = Option::from(cli);
+    }
+    pub fn subscribe(&self) {
+        let subscriptions = &["#"];
+        let qos = &[1];
+        let cli = self.cli.unwrap_or_else("please create a client");
+
+        let resp = cli.subscribe_many(subscriptions, qos).await;
+        match resp {
+            Ok(v)=>{
+               let r = v.subscribe_many_response();
+            },
             Err(e) => {
                 error!("Unable to connect: {:?}", self.mqtt_addr);
                 eprintln!("Unable to connect: {:?}", self.mqtt_addr);
                 process::exit(1);
             }
         }
-        self.cli = Option::from(cli);
     }
-    pub fn subscribe(&self) {}
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
+    #[tokio::test]
     async fn test_connection() {
         env_logger::init();
 

@@ -11,6 +11,8 @@ pub struct MqttSettings {
     pub(crate) client_id: String,
     pub(crate) mqtt_topic: Vec<String>,
     pub(crate) mqtt_qos: Vec<i32>,
+    pub(crate) will_message: String,
+    pub(crate) will_topic: String
 }
 
 impl Default for MqttSettings {
@@ -20,6 +22,8 @@ impl Default for MqttSettings {
             client_id: "test_client".to_string(),
             mqtt_topic: vec!["#".to_string()],
             mqtt_qos: vec![1],
+            will_message: "Bridge node has failed".to_string(),
+            will_topic: "bridge/dead".to_string()
         }
     }
 }
@@ -70,6 +74,8 @@ impl Default for BridgeSettings {
                 client_id: "test_client".to_string(),
                 mqtt_topic: vec!["#".to_string()],
                 mqtt_qos: vec![1],
+                will_message: "Bridge node has failed".to_string(),
+                will_topic: "bridge/dead".to_string()
             },
             kafka_settings: KafkaSettings {
                 servers: "127.0.0.1:9092".to_string(),
@@ -92,6 +98,8 @@ mod tests {
                 client_id: "test_client".to_string(),
                 mqtt_topic: vec!["*".to_string()],
                 mqtt_qos: vec![1],
+                will_message: "Bridge node has failed".to_string(),
+                will_topic: "bridge/dead".to_string()
             },
             kafka_settings: KafkaSettings {
                 servers: "127.0.0.1:9092".to_string(),

@@ -24,8 +24,8 @@ impl MqttClient {
             .finalize();
 
         let mut cli = mqtt::AsyncClient::new(create_opts).unwrap_or_else(|e| {
-            eprintln!("Error creating the mqtt client: {:?}, address: {}", e, settings.address);
-            error!("Unable to connect mqtt client: {:?}, address: {}", e, settings.address);
+            eprintln!("Error creating the mqtt client: {:?}, address: {}", e, settings.address.clone());
+            error!("Unable to connect mqtt client: {:?}, address: {}", e, settings.address.clone());
             process::exit(1);
         });
 
@@ -37,13 +37,13 @@ impl MqttClient {
 
         // Define the set of options for the connection
         let lwt = mqtt::MessageBuilder::new()
-            .topic("lwt")
-            .payload("Sync consumer lost connection")
+            .topic(settings.will_topic.clone())
+            .payload(settings.will_message.clone())
             .finalize();
 
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
             .ssl_options(ssl_opts)
-            // .user_name("test_user")
+            // .user_name(None)
             // .password("test_password")
             .keep_alive_interval(Duration::from_secs(20))
             .clean_session(false)
@@ -57,8 +57,8 @@ impl MqttClient {
         let rsp: ServerResponse = match cli.connect(conn_opts).await {
             Ok(r) => r,
             Err(_e) => {
-                error!("Unable to connect: {:?}", settings.address);
-                eprintln!("Unable to connect: {:?}", settings.address);
+                error!("Unable to connect: {:?}", settings.address.clone());
+                eprintln!("Unable to connect: {:?}", settings.address.clone());
                 process::exit(1);
             }
         };

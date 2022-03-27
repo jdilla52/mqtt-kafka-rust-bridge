@@ -34,7 +34,7 @@ pub async fn send_kafka_message(
     let produce_future = producer.send(record, Duration::from_millis(1)).await;
     return match produce_future {
         Ok(delivery) => {
-            debug!("Sent kafka message: {:?}", delivery);
+        debug!("Sent kafka message: {:?}", delivery);
             true
         }
         Err((e, _)) => {

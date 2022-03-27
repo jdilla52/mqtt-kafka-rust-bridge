@@ -1,8 +1,8 @@
 mod bridge;
+mod config;
 mod kafka_client;
 mod mqtt_client;
 mod utils;
-mod config;
 
 #[cfg(test)]
 mod tests {

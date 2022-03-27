@@ -1,3 +1,4 @@
+use crate::config::MqttSettings;
 use futures::executor::block_on;
 use futures::stream::StreamExt;
 use log::{error, info};
@@ -9,18 +10,17 @@ use std::time::Duration;
 use std::{process, thread};
 
 pub struct MqttClient {
-    mqtt_addr: String,
-    client_id: String,
+    settings: MqttSettings,
     pub cli: AsyncClient,
     pub message_stream: AsyncReceiver<Option<Message>>,
 }
 
 impl MqttClient {
-    pub async fn new(mqtt_addr: String, client_id: String) -> MqttClient {
+    pub async fn new(settings: MqttSettings) -> MqttClient {
         info!("rbot is connecting");
         let create_opts = mqtt::CreateOptionsBuilder::new()
-            .server_uri(mqtt_addr.clone())
-            .client_id(client_id.clone())
+            .server_uri(settings.address.clone())
+            .client_id(settings.client_id.clone())
             .max_buffered_messages(100)
             .finalize();
 
@@ -58,8 +58,8 @@ impl MqttClient {
         let rsp: ServerResponse = match cli.connect(conn_opts).await {
             Ok(r) => r,
             Err(e) => {
-                error!("Unable to connect: {:?}", mqtt_addr);
-                eprintln!("Unable to connect: {:?}", mqtt_addr);
+                error!("Unable to connect: {:?}", settings.address);
+                eprintln!("Unable to connect: {:?}", settings.address);
                 process::exit(1);
             }
         };
@@ -76,8 +76,7 @@ impl MqttClient {
             }
         }
         MqttClient {
-            mqtt_addr,
-            client_id,
+            settings,
             cli,
             message_stream,
         }
@@ -96,11 +95,11 @@ impl MqttClient {
             Err(_e) => {
                 error!(
                     "Unable to subscribe: {:?} on topics {:?}",
-                    self.mqtt_addr, subscriptions
+                    self.settings.address, subscriptions
                 );
                 eprintln!(
                     "Unable to subscribe: {:?} on topics {:?}",
-                    self.mqtt_addr, subscriptions
+                    self.settings.address, subscriptions
                 );
                 process::exit(1);
             }
@@ -132,15 +131,21 @@ mod tests {
 
     #[tokio::test]
     async fn test_connection() {
-        let mut client =
-            MqttClient::new("tcp://127.0.0.1:1883".to_string(), "test".to_string()).await;
+        let mut client = MqttClient::new(MqttSettings {
+            address: "tcp://127.0.0.1:1883".to_string(),
+            client_id: "test".to_string(),
+        })
+        .await;
         assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(&client.cli));
     }
 
     #[tokio::test]
     async fn test_reconnect() {
-        let mut client =
-            MqttClient::new("tcp://127.0.0.1:1883".to_string(), "test".to_string()).await;
+        let mut client = MqttClient::new(MqttSettings {
+            address: "tcp://127.0.0.1:1883".to_string(),
+            client_id: "test".to_string(),
+        })
+        .await;
         client.cli.disconnect(None);
         let reconnect = client.try_reconnect();
         assert!(reconnect);
@@ -148,8 +153,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_subscription() {
-        let mut client =
-            MqttClient::new("tcp://127.0.0.1:1883".to_string(), "test".to_string()).await;
+        let mut client = MqttClient::new(MqttSettings {
+            address: "tcp://127.0.0.1:1883".to_string(),
+            client_id: "test".to_string(),
+        })
+        .await;
         let valid = client.subscribe().await;
         assert!(valid);
     }

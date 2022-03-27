@@ -1,16 +1,12 @@
 use crate::bridge::BridgeStats;
 use crate::config::HttpSettings;
 use actix_web::web::Data;
-use actix_web::{
-    error, get, http,
-    http::{
-        header::{self, ContentType},
-        Method, StatusCode,
-    },
-    middleware, web, App, Either, HttpRequest, HttpResponse, HttpServer, Responder, Result,
-};
+use actix_web::{error, get, http, http::{
+    header::{self, ContentType},
+    Method, StatusCode,
+}, middleware, web, App, Either, HttpRequest, HttpResponse, HttpServer, Responder, Result, rt};
 use serde_json::json;
-use std::net;
+use std::{net, thread};
 use std::os::unix::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -48,30 +44,31 @@ async fn health_check() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
 
-impl BridgeHttpServer {
-    pub async fn new(
-        settings: HttpSettings,
-        bridge_stats: Arc<Mutex<BridgeStats>>,
-    ) -> std::io::Result<()> {
-        log::info!(
-            "starting HTTP server at {}:{}",
-            settings.address,
-            settings.port
-        );
 
-        HttpServer::new(move || {
-            App::new()
-                .app_data(Data::new(bridge_stats.clone()))
-                .route("/healthcheck", web::get().to(health_check))
-                .route("/", web::get().to(health_check))
-                // default
-                .default_service(web::to(default_handler))
-        })
+async fn run_api(settings: HttpSettings,
+                 bridge_stats: Arc<Mutex<BridgeStats>>, ) -> std::io::Result<()> {
+    HttpServer::new(move || {
+        App::new()
+            .app_data(Data::new(bridge_stats.clone()))
+            .route("/healthcheck", web::get().to(health_check))
+            .route("/", web::get().to(health_check))
+            // default
+            .default_service(web::to(default_handler))
+    })
         .bind(settings.address)?
         .workers(1)
         .run()
         .await
-    }
+}
+
+pub(crate) fn spawn_api(
+    settings: HttpSettings,
+    bridge_stats: Arc<Mutex<BridgeStats>>,
+){
+    tokio::spawn(async move {
+        let server_future = run_api(settings.clone(), bridge_stats.clone());
+        rt::System::new().block_on(server_future)
+    });
 }
 
 #[cfg(test)]
@@ -83,14 +80,6 @@ mod tests {
     use futures::TryFutureExt;
     use std::any::TypeId;
     use std::hash::Hasher;
-
-    #[tokio::test]
-    async fn test_default() {
-        let s = BridgeHttpServer {
-            settings: HttpSettings::default(),
-            bridge_stats: Arc::new(Mutex::new(BridgeStats::default())),
-        };
-    }
 
     #[tokio::test]
     async fn health_check_succeeds() {

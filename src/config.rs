@@ -4,6 +4,20 @@ extern crate confy;
 extern crate serde;
 
 use serde::{Deserialize, Serialize};
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct HttpSettings {
+    pub(crate) address: String,
+    pub(crate) port: u32,
+}
+
+impl Default for HttpSettings {
+    fn default() -> Self {
+        HttpSettings {
+            address: "127.0.0.1".to_string(),
+            port: 8080,
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct MqttSettings {
@@ -13,8 +27,8 @@ pub struct MqttSettings {
     pub(crate) mqtt_qos: Vec<i32>,
     pub(crate) will_message: String,
     pub(crate) will_topic: String,
-    pub(crate) user:String,
-    pub(crate) pwd: String
+    pub(crate) user: String,
+    pub(crate) pwd: String,
 }
 
 impl Default for MqttSettings {
@@ -27,7 +41,7 @@ impl Default for MqttSettings {
             will_message: "Bridge node has failed".to_string(),
             will_topic: "bridge/dead".to_string(),
             user: "mqttAdmin".to_string(),
-            pwd: "super".to_string()
+            pwd: "super".to_string(),
         }
     }
 }
@@ -81,7 +95,7 @@ impl Default for BridgeSettings {
                 will_message: "Bridge node has failed".to_string(),
                 will_topic: "bridge/dead".to_string(),
                 user: "mqttAdmin".to_string(),
-                pwd: "super".to_string()
+                pwd: "super".to_string(),
             },
             kafka_settings: KafkaSettings {
                 servers: "127.0.0.1:9092".to_string(),
@@ -107,7 +121,7 @@ mod tests {
                 will_message: "Bridge node has failed".to_string(),
                 will_topic: "bridge/dead".to_string(),
                 user: "mqttAdmin".to_string(),
-                pwd: "super".to_string()
+                pwd: "super".to_string(),
             },
             kafka_settings: KafkaSettings {
                 servers: "127.0.0.1:9092".to_string(),

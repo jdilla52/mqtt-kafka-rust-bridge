@@ -1,5 +1,6 @@
 mod bridge;
 mod config;
+mod http_server;
 mod kafka_client;
 mod mqtt_client;
 mod utils;

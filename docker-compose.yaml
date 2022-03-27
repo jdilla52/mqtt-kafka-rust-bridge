@@ -24,3 +24,16 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+  hivemq:
+    container_name: mqtt
+    image: hivemq/hivemq-ce:2021.1
+    restart: always
+    #    network_mode: host
+    expose:
+      - 1883
+      - 8000
+      - 8080
+    ports:
+      - "8000:8000"
+      - "1883:1883"
+      - "8080:8080"

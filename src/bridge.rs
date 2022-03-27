@@ -11,7 +11,9 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 extern crate serde;
 
+use crate::http_server::spawn_api;
 use serde::{Deserialize, Serialize};
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct BridgeStats {
     skipped_messages: i32,
@@ -68,6 +70,8 @@ impl Bridge {
         }
     }
     pub async fn run(&mut self) {
+        spawn_api(&self.settings.http_settings, &self.bridge_stats);
+
         while let Some(msg_opt) = self.mqtt_client.message_stream.next().await {
             if let Some(msg) = msg_opt {
                 // clone just the data we need in the threads

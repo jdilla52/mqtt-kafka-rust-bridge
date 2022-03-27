@@ -72,6 +72,7 @@ impl Default for KafkaSettings {
 pub struct BridgeSettings {
     pub mqtt_settings: MqttSettings,
     pub kafka_settings: KafkaSettings,
+    pub http_settings: HttpSettings,
 }
 
 impl BridgeSettings {
@@ -102,6 +103,7 @@ impl Default for BridgeSettings {
                 timeout_ms: 5000,
                 kafka_topic: "*".to_string(),
             },
+            http_settings: HttpSettings::default(),
         }
     }
 }
@@ -128,6 +130,7 @@ mod tests {
                 timeout_ms: 0,
                 kafka_topic: "*".to_string(),
             },
+            http_settings: Default::default(),
         };
 
         assert_eq!(t, BridgeSettings::from_json(&t.as_json()));

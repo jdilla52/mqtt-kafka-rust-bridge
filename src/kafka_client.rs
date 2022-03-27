@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use std::time::Duration;
-use log::{debug, error};
 use crate::config::KafkaSettings;
+use log::{debug, error};
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use rdkafka::{ClientConfig};
+use rdkafka::ClientConfig;
+use std::time::Duration;
 
 pub struct KafkaClient {
     settings: KafkaSettings,
@@ -34,12 +34,12 @@ pub async fn send_kafka_message(
     let produce_future = producer.send(record, Duration::from_millis(1)).await;
     return match produce_future {
         Ok(delivery) => {
-            debug!("Sent: {:?}", delivery);
+            debug!("Sent kafka message: {:?}", delivery);
             true
         }
         Err((e, _)) => {
-            println!("error kafka message: {}", String::from_utf8_lossy(raw));
-            error!("Error: {:?}", e);
+            println!("Error kafka message: {}", String::from_utf8_lossy(raw));
+            error!("Error sending kafka message: {:?}", e);
             false
         }
     };

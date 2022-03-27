@@ -5,7 +5,6 @@ use crate::kafka_client::{send_kafka_message, KafkaClient};
 use crate::mqtt_client::MqttClient;
 use futures::StreamExt;
 use log::{debug, error};
-use std::sync::atomic::AtomicI32;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
@@ -67,8 +66,10 @@ impl Bridge {
                     if kafka_topic != "*" {
                         // only allow wild card for rn
                         guard.skipped_messages += 1;
+                        debug!("skipping message: {}", guard.skipped_messages);
                     }
                     guard.routed_messages += 1;
+                    debug!("skipping message: {}", guard.routed_messages);
                     drop(guard);
 
                     // generate kafka topic from mqtt topic
@@ -83,15 +84,20 @@ impl Bridge {
                     if !success {
                         let mut guard = stats.lock().await;
                         guard.errors += 1;
+                        error!("error count: {}", guard.errors);
                         drop(guard);
                     }
                 });
             } else {
                 let mut guard = self.bridge_stats.lock().await;
                 guard.connection_error += 1;
-                drop(guard);
                 // A "None" means we were disconnected. Try to reconnect...
                 println!("Lost connection. Attempting reconnect.");
+                error!(
+                    "Lost connection. Attempting reconnect. error count: {}",
+                    guard.connection_error
+                );
+                drop(guard);
                 self.mqtt_client.try_reconnect();
             }
         }

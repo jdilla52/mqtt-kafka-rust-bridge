@@ -4,7 +4,7 @@ use crate::config::MqttSettings;
 use log::{error, info};
 use paho_mqtt as mqtt;
 use paho_mqtt::async_client::AsyncClient;
-use paho_mqtt::{AsyncReceiver,  Message, ServerResponse};
+use paho_mqtt::{AsyncReceiver, Message, ServerResponse};
 use std::time::Duration;
 use std::{process, thread};
 
@@ -24,8 +24,8 @@ impl MqttClient {
             .finalize();
 
         let mut cli = mqtt::AsyncClient::new(create_opts).unwrap_or_else(|e| {
-            eprintln!("Error creating the client: {:?}", e);
-            error!("Unable to connect: {:?}", e);
+            eprintln!("Error creating the mqtt client: {:?}, address: {}", e, settings.address);
+            error!("Unable to connect mqtt client: {:?}, address: {}", e, settings.address);
             process::exit(1);
         });
 
@@ -64,15 +64,10 @@ impl MqttClient {
         };
 
         match rsp.connect_response() {
-            Some(conn_rsp) => {
-                println!(
+            Some(conn_rsp) => println!(
                     "Connected to: '{}' with MQTT version {}",
-                    conn_rsp.server_uri, conn_rsp.mqtt_version
-                );
-            }
-            _ => {
-                println!("existing session");
-            }
+                    conn_rsp.server_uri, conn_rsp.mqtt_version),
+            _ => println!("existing session")
         }
         MqttClient {
             settings,

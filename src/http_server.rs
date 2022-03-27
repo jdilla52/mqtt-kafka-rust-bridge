@@ -1,18 +1,16 @@
+#![allow(dead_code)]
+
 use crate::bridge::BridgeStats;
 use crate::config::HttpSettings;
 use actix_web::web::Data;
 use actix_web::{
-    error, get, http,
     http::{
-        header::{self, ContentType},
-        Method, StatusCode,
+        Method,
     },
-    middleware, rt, web, App, Either, HttpRequest, HttpResponse, HttpServer, Responder, Result,
+    rt, web, App, Either, HttpResponse, HttpServer, Responder, Result,
 };
 use serde_json::json;
-use std::os::unix::net::SocketAddr;
 use std::sync::Arc;
-use std::{net, thread};
 use tokio::sync::Mutex;
 
 struct BridgeHttpServer {
@@ -38,7 +36,7 @@ async fn site_map() -> HttpResponse {
 }
 
 async fn bridge_stats(data: Data<Arc<Mutex<BridgeStats>>>) -> HttpResponse {
-    let mut my_data = data.lock().await;
+    let my_data = data.lock().await;
     HttpResponse::Ok()
         // .append_header((http::header::CONTENT_TYPE, "application/json"))
         .json(my_data.as_json())
@@ -50,11 +48,12 @@ async fn health_check() -> HttpResponse {
 
 async fn run_api(
     settings: HttpSettings,
-    bridge_stats: Arc<Mutex<BridgeStats>>,
+    stats: Arc<Mutex<BridgeStats>>,
 ) -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
-            .app_data(Data::new(bridge_stats.clone()))
+            .app_data(Data::new(stats.clone()))
+            .route("/status", web::get().to(bridge_stats))
             .route("/healthcheck", web::get().to(health_check))
             .route("/", web::get().to(health_check))
             // default
@@ -78,12 +77,6 @@ pub(crate) fn spawn_api(settings: &HttpSettings, bridge_stats: &Arc<Mutex<Bridge
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http_server;
-    use actix_web::body::to_bytes;
-    use futures::task::Spawn;
-    use futures::TryFutureExt;
-    use std::any::TypeId;
-    use std::hash::Hasher;
 
     #[tokio::test]
     async fn health_check_succeeds() {

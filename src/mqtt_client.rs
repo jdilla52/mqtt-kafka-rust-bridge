@@ -1,11 +1,10 @@
+#![allow(dead_code)]
+
 use crate::config::MqttSettings;
-use futures::executor::block_on;
-use futures::stream::StreamExt;
 use log::{error, info};
 use paho_mqtt as mqtt;
 use paho_mqtt::async_client::AsyncClient;
-use paho_mqtt::{AsyncReceiver, ConnectResponse, DeliveryToken, Message, Receiver, ServerResponse};
-use std::ptr::addr_of_mut;
+use paho_mqtt::{AsyncReceiver,  Message, ServerResponse};
 use std::time::Duration;
 use std::{process, thread};
 
@@ -52,12 +51,12 @@ impl MqttClient {
             .finalize();
 
         // Get message stream before connecting.
-        let mut message_stream = cli.get_stream(1024);
+        let message_stream = cli.get_stream(1024);
         // self.message_stream = Option::from(stream);
 
         let rsp: ServerResponse = match cli.connect(conn_opts).await {
             Ok(r) => r,
-            Err(e) => {
+            Err(_e) => {
                 error!("Unable to connect: {:?}", settings.address);
                 eprintln!("Unable to connect: {:?}", settings.address);
                 process::exit(1);
@@ -92,7 +91,7 @@ impl MqttClient {
             .await;
         match resp {
             Ok(v) => {
-                let r = v.subscribe_many_response();
+                v.subscribe_many_response();
                 return true;
             }
             Err(_e) => {
@@ -134,13 +133,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_connection() {
-        let mut client = MqttClient::new(MqttSettings::default()).await;
+        let client = MqttClient::new(MqttSettings::default()).await;
         assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(&client.cli));
     }
 
     #[tokio::test]
     async fn test_reconnect() {
-        let mut client = MqttClient::new(MqttSettings::default()).await;
+        let client = MqttClient::new(MqttSettings::default()).await;
         client.cli.disconnect(None);
         let reconnect = client.try_reconnect();
         assert!(reconnect);
@@ -148,7 +147,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_subscription() {
-        let mut client = MqttClient::new(MqttSettings::default()).await;
+        let client = MqttClient::new(MqttSettings::default()).await;
         let valid = client.subscribe().await;
         assert!(valid);
     }

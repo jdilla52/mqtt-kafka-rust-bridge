@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 extern crate confy;
 extern crate serde;
 
@@ -103,6 +105,6 @@ mod tests {
 
     #[test]
     fn load_config() {
-        let config: BridgeSettings = confy::load_path("../config/default.conf").unwrap();
+        let _config: BridgeSettings = confy::load_path("../config/default.conf").unwrap();
     }
 }

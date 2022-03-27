@@ -1,15 +1,10 @@
-use log::{debug, error};
-use std::convert::TryFrom;
-use std::error::Error;
-use std::time::Duration;
+#![allow(dead_code)]
 
+use std::time::Duration;
+use log::{debug, error};
 use crate::config::KafkaSettings;
-use rdkafka::config::RDKafkaLogLevel;
-use rdkafka::consumer::Consumer;
-use rdkafka::consumer::StreamConsumer;
-use rdkafka::producer::future_producer::OwnedDeliveryResult;
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use rdkafka::{ClientConfig, Message};
+use rdkafka::{ClientConfig};
 
 pub struct KafkaClient {
     settings: KafkaSettings,

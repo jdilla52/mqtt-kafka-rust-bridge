@@ -1,11 +1,10 @@
+#![allow(dead_code)]
+
 use crate::config::BridgeSettings;
 use crate::kafka_client::{send_kafka_message, KafkaClient};
 use crate::mqtt_client::MqttClient;
 use futures::StreamExt;
 use log::{debug, error};
-use rdkafka::producer::FutureRecord;
-use std::process;
-use std::time::Duration;
 use uuid::Uuid;
 
 pub struct Bridge {
@@ -20,8 +19,8 @@ fn mqtt_to_kafka_topic(v: &str) -> String {
 
 impl Bridge {
     pub async fn new(settings: BridgeSettings) -> Bridge {
-        let mut mqtt_client = MqttClient::new(settings.mqtt_settings.clone()).await;
-        let valid = mqtt_client.subscribe().await; // maybe move
+        let mqtt_client = MqttClient::new(settings.mqtt_settings.clone()).await;
+        mqtt_client.subscribe().await; // maybe move
         let kafka_client = KafkaClient::new(settings.kafka_settings.clone());
 
         Bridge {
@@ -66,7 +65,7 @@ mod tests {
     #[tokio::test]
     async fn test_bridge_message() {
         init();
-        let j = Bridge::new(BridgeSettings::default()).await;
+        Bridge::new(BridgeSettings::default()).await;
     }
 
     // #[tokio::test]

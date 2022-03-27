@@ -9,7 +9,10 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
 use uuid::Uuid;
+extern crate serde;
 
+use serde::{Deserialize, Serialize};
+#[derive(Serialize, Deserialize, Clone)]
 pub struct BridgeStats {
     skipped_messages: i32,
     routed_messages: i32,
@@ -27,6 +30,16 @@ impl Default for BridgeStats {
             connection_error: 0,
             start_time: SystemTime::now(),
         }
+    }
+}
+
+impl BridgeStats {
+    pub(crate) fn as_json(&self) -> String {
+        return serde_json::to_string(&self).unwrap();
+    }
+
+    fn from_json(s: &str) -> Self {
+        return serde_json::from_str(s).unwrap();
     }
 }
 

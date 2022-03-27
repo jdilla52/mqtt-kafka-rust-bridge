@@ -1,14 +1,23 @@
+use crate::bridge::BridgeStats;
 use crate::config::HttpSettings;
-use actix_web::{error, get, http::{
-    header::{self, ContentType},
-    Method, StatusCode,
-}, middleware, web, App, Either, HttpRequest, HttpResponse, HttpServer, Responder, Result, http};
+use actix_web::web::Data;
+use actix_web::{
+    error, get, http,
+    http::{
+        header::{self, ContentType},
+        Method, StatusCode,
+    },
+    middleware, web, App, Either, HttpRequest, HttpResponse, HttpServer, Responder, Result,
+};
+use serde_json::json;
 use std::net;
 use std::os::unix::net::SocketAddr;
-use serde_json::json;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 struct BridgeHttpServer {
     settings: HttpSettings,
+    bridge_stats: Arc<Mutex<BridgeStats>>,
 }
 
 async fn default_handler(req_method: Method) -> Result<impl Responder> {
@@ -18,14 +27,21 @@ async fn default_handler(req_method: Method) -> Result<impl Responder> {
     }
 }
 
-async fn site_map() -> HttpResponse{
+async fn site_map() -> HttpResponse {
     HttpResponse::Ok()
-    // .append_header((http::header::CONTENT_TYPE, "application/json"))
+        // .append_header((http::header::CONTENT_TYPE, "application/json"))
         .json(json!({
-                "self": "/",
-                "Healthcheck": "/healthcheck",
-                "Bridge Status": "/stats"
-    }))
+                    "self": "/",
+                    "Healthcheck": "/healthcheck",
+                    "Bridge Status": "/stats"
+        }))
+}
+
+async fn bridge_stats(data: Data<Arc<Mutex<BridgeStats>>>) -> HttpResponse {
+    let mut my_data = data.lock().await;
+    HttpResponse::Ok()
+        // .append_header((http::header::CONTENT_TYPE, "application/json"))
+        .json(my_data.as_json())
 }
 
 async fn health_check() -> HttpResponse {
@@ -33,47 +49,46 @@ async fn health_check() -> HttpResponse {
 }
 
 impl BridgeHttpServer {
-    pub async fn new(settings: HttpSettings) -> std::io::Result<()> {
+    pub async fn new(
+        settings: HttpSettings,
+        bridge_stats: Arc<Mutex<BridgeStats>>,
+    ) -> std::io::Result<()> {
         log::info!(
             "starting HTTP server at {}:{}",
             settings.address,
             settings.port
         );
 
-        // let server: SocketAddr = settings.address
-        //     .parse()
-        //     .expect("Unable to parse socket address");
-
-        HttpServer::new(|| {
+        HttpServer::new(move || {
             App::new()
-                // .servce()
+                .app_data(Data::new(bridge_stats.clone()))
                 .route("/healthcheck", web::get().to(health_check))
                 .route("/", web::get().to(health_check))
                 // default
                 .default_service(web::to(default_handler))
         })
-            .bind(settings.address)?
-            .workers(1)
-            .run()
-            .await
+        .bind(settings.address)?
+        .workers(1)
+        .run()
+        .await
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::http_server;
+    use actix_web::body::to_bytes;
     use futures::task::Spawn;
+    use futures::TryFutureExt;
     use std::any::TypeId;
     use std::hash::Hasher;
-    use actix_web::body::to_bytes;
-    use futures::TryFutureExt;
 
     #[tokio::test]
     async fn test_default() {
         let s = BridgeHttpServer {
             settings: HttpSettings::default(),
+            bridge_stats: Arc::new(Mutex::new(BridgeStats::default())),
         };
     }
 
@@ -89,4 +104,3 @@ mod tests {
         assert!(response.status().is_success());
     }
 }
-

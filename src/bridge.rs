@@ -9,7 +9,7 @@ use std::time::Duration;
 use uuid::Uuid;
 
 pub struct Bridge {
-    config: BridgeSettings,
+    settings: BridgeSettings,
     mqtt_client: MqttClient,
     kafka_client: KafkaClient
 }
@@ -19,10 +19,16 @@ fn mqtt_to_kafka_topic(v: &str) -> String {
 }
 
 impl Bridge {
-    pub async fn new(settings: BridgeSettings) {
-        let mut mqtt_client = MqttClient::new(settings.mqtt_settings).await;
+    pub async fn new(settings: BridgeSettings)->Bridge {
+        let mut mqtt_client = MqttClient::new(settings.mqtt_settings.clone()).await;
         let valid = mqtt_client.subscribe().await; // maybe move
-        let kafka_client = KafkaClient::new(settings.kafka_settings);
+        let kafka_client = KafkaClient::new(settings.kafka_settings.clone());
+
+        Bridge{
+            mqtt_client,
+            kafka_client,
+            settings
+        }
     }
     pub async fn run(&mut self) {
         while let Some(msg_opt) = self.mqtt_client.message_stream.next().await {

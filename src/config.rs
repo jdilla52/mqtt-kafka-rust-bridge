@@ -3,19 +3,19 @@ extern crate serde;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct MqttSettings {
     pub(crate) address: String,
     pub(crate) client_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct KafkaSettings {
     pub(crate) servers: String,
     pub(crate) timeout_ms: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct TopicSettings {
     mqtt_topic: String,
     kafka_topic: String,

@@ -69,10 +69,8 @@ impl Bridge {
             bridge_stats: Arc::new(Mutex::new(BridgeStats::default())),
         }
     }
-    pub fn spawn_api(&self) {
-        spawn_api(&self.settings.http_settings, &self.bridge_stats);
-    }
     pub async fn run(&mut self) {
+        spawn_api(&self.settings.http_settings, &self.bridge_stats);
         while let Some(msg_opt) = self.mqtt_client.message_stream.next().await {
             if let Some(msg) = msg_opt {
                 // clone just the data we need in the threads

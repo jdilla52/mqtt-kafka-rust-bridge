@@ -3,12 +3,7 @@
 use crate::bridge::BridgeStats;
 use crate::config::HttpSettings;
 use actix_web::web::Data;
-use actix_web::{
-    http::{
-        Method,
-    },
-    rt, web, App, Either, HttpResponse, HttpServer, Responder, Result,
-};
+use actix_web::{http::Method, rt, web, App, Either, HttpResponse, HttpServer, Responder, Result};
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -46,10 +41,7 @@ async fn health_check() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
 
-async fn run_api(
-    settings: HttpSettings,
-    stats: Arc<Mutex<BridgeStats>>,
-) -> std::io::Result<()> {
+async fn run_api(settings: HttpSettings, stats: Arc<Mutex<BridgeStats>>) -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(stats.clone()))

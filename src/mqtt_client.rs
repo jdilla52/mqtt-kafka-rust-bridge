@@ -83,10 +83,10 @@ impl MqttClient {
     }
     pub async fn subscribe(&self) -> bool {
         // add config to ignore or add specific topics
-        let subscriptions = &["test"];
-        let qos = &[1];
-
-        let resp = self.cli.subscribe_many(subscriptions, qos).await;
+        let resp = self
+            .cli
+            .subscribe_many(self.settings.mqtt_topic.as_slice(),self.settings.mqtt_qos.as_ref())
+            .await;
         match resp {
             Ok(v) => {
                 let r = v.subscribe_many_response();
@@ -95,11 +95,11 @@ impl MqttClient {
             Err(_e) => {
                 error!(
                     "Unable to subscribe: {:?} on topics {:?}",
-                    self.settings.address, subscriptions
+                    self.settings.address, self.settings.mqtt_topic
                 );
                 eprintln!(
                     "Unable to subscribe: {:?} on topics {:?}",
-                    self.settings.address, subscriptions
+                    self.settings.address, self.settings.mqtt_topic
                 );
                 process::exit(1);
             }
@@ -134,7 +134,8 @@ mod tests {
         let mut client = MqttClient::new(MqttSettings {
             address: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
-            mqtt_topic: vec![]
+            mqtt_topic: vec![],
+            mqtt_qos: vec![1],
         })
         .await;
         assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(&client.cli));
@@ -145,7 +146,8 @@ mod tests {
         let mut client = MqttClient::new(MqttSettings {
             address: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
-            mqtt_topic: vec![]
+            mqtt_topic: vec![],
+            mqtt_qos: vec![],
         })
         .await;
         client.cli.disconnect(None);
@@ -158,7 +160,8 @@ mod tests {
         let mut client = MqttClient::new(MqttSettings {
             address: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
-            mqtt_topic: vec!["#".to_string()]
+            mqtt_topic: vec!["#".to_string()],
+            mqtt_qos: vec![1],
         })
         .await;
         let valid = client.subscribe().await;

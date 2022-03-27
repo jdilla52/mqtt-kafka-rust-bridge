@@ -8,14 +8,14 @@ pub struct MqttSettings {
     pub(crate) address: String,
     pub(crate) client_id: String,
     pub(crate) mqtt_topic: Vec<String>,
-
+    pub(crate) mqtt_qos: Vec<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct KafkaSettings {
     pub(crate) servers: String,
     pub(crate) timeout_ms: i32,
-    pub(crate)  kafka_topic: String,
+    pub(crate) kafka_topic: String,
 }
 
 // #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -47,6 +47,7 @@ impl Default for BridgeSettings {
                 address: "tcp://127.0.0.1:1883".to_string(),
                 client_id: "test_client".to_string(),
                 mqtt_topic: vec!["#".to_string()],
+                mqtt_qos: vec![1],
             },
             kafka_settings: KafkaSettings {
                 servers: "127.0.0.1:9092".to_string(),
@@ -68,6 +69,7 @@ mod tests {
                 address: "tcp://127.0.0.1:1883".to_string(),
                 client_id: "test_client".to_string(),
                 mqtt_topic: vec!["*".to_string()],
+                mqtt_qos: vec![1],
             },
             kafka_settings: KafkaSettings {
                 servers: "127.0.0.1:9092".to_string(),

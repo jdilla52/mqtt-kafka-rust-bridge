@@ -43,8 +43,8 @@ impl MqttClient {
 
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
             .ssl_options(ssl_opts)
-            // .user_name(None)
-            // .password("test_password")
+            .user_name(settings.user.clone())
+            .password(settings.pwd.clone())
             .keep_alive_interval(Duration::from_secs(20))
             .clean_session(false)
             .will_message(lwt)

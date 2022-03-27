@@ -32,12 +32,12 @@ impl<'a> KafkaClient {
 }
 
 pub async fn send_kafka_message(
-    producer: &FutureProducer,
+    producer: FutureProducer,
     topic: String,
     key: String,
-    record: &[u8],
+    raw: &[u8],
 ) -> bool {
-    let record = FutureRecord::to(&topic).key(&key).payload(record);
+    let record = FutureRecord::to(&topic).key(&key).payload(raw);
 
     let produce_future = producer.send(record, Duration::from_millis(1)).await;
     return match produce_future {
@@ -46,19 +46,18 @@ pub async fn send_kafka_message(
             true
         }
         Err((e, _)) => {
+            println!("error kafka message: {}", String::from_utf8_lossy(raw));
             error!("Error: {:?}", e);
             false
         }
     };
-}
-fn init() {
-    let _ = env_logger::builder().is_test(true).try_init();
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::any::TypeId;
+    use crate::utils::init;
 
     fn get_type_of<T: 'static>(_: &T) -> TypeId {
         TypeId::of::<T>()
@@ -78,7 +77,7 @@ mod tests {
         init();
         let j = KafkaClient::new("127.0.0.1:9092".into());
         let out = send_kafka_message(
-            &j.producer,
+            j.producer,
             "test".to_string(),
             "test".to_string(),
             "hello kafka".as_bytes(),

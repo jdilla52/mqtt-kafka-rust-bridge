@@ -1,6 +1,7 @@
-mod mqtt_client;
-mod kafka_client;
 mod bridge;
+mod kafka_client;
+mod mqtt_client;
+mod utils;
 
 #[cfg(test)]
 mod tests {

@@ -1,28 +1,30 @@
+use futures::executor::block_on;
+use futures::stream::StreamExt;
 use log::{error, info};
 use paho_mqtt as mqtt;
 use paho_mqtt::async_client::AsyncClient;
 use paho_mqtt::{AsyncReceiver, ConnectResponse, DeliveryToken, Message, Receiver, ServerResponse};
-use std::{process, thread};
 use std::ptr::addr_of_mut;
 use std::time::Duration;
-use futures::{stream::StreamExt};
-use futures::executor::block_on;
+use std::{process, thread};
 
 pub struct MqttClient {
     mqtt_addr: String,
     client_id: String,
     pub cli: Option<AsyncClient>,
-    pub message_stream: Option<AsyncReceiver<Option<Message>>>
+    pub message_stream: Option<AsyncReceiver<Option<Message>>>,
 }
 
 impl MqttClient {
-
-    pub fn new(mqtt_addr: String,client_id:String)->MqttClient{
-        MqttClient{
-            mqtt_addr,client_id,cli:None, message_stream: None
+    pub fn new(mqtt_addr: String, client_id: String) -> MqttClient {
+        MqttClient {
+            mqtt_addr,
+            client_id,
+            cli: None,
+            message_stream: None,
         }
     }
-    pub async fn build_mqtt_connection(&mut self) -> &mut Self{
+    pub async fn build_mqtt_connection(&mut self) -> &mut Self {
         info!("rbot is connecting");
         let create_opts = mqtt::CreateOptionsBuilder::new()
             .server_uri(self.mqtt_addr.clone())
@@ -36,7 +38,6 @@ impl MqttClient {
             process::exit(1);
         });
 
-
         let ssl_opts = mqtt::SslOptionsBuilder::new()
             .enable_server_cert_auth(false)
             // .trust_store(trust_store)?
@@ -45,7 +46,7 @@ impl MqttClient {
 
         // Define the set of options for the connection
         let lwt = mqtt::MessageBuilder::new()
-            .topic("test")
+            .topic("lwt")
             .payload("Sync consumer lost connection")
             .finalize();
 
@@ -60,8 +61,7 @@ impl MqttClient {
 
         // Get message stream before connecting.
         let mut stream = cli.get_stream(1024);
-        self.message_stream=Option::from(stream);
-
+        self.message_stream = Option::from(stream);
 
         let rsp: ServerResponse = match cli.connect(conn_opts).await {
             Ok(r) => r,
@@ -88,7 +88,7 @@ impl MqttClient {
     }
     pub async fn subscribe(&self) -> bool {
         // add config to ignore or add specific topics
-        let subscriptions = &["#"];
+        let subscriptions = &["test"];
         let qos = &[1];
         let cli = self.cli.as_ref().unwrap_or_else(|| {
             println!("cant subscribe without an mqtt client please create a client");
@@ -102,8 +102,14 @@ impl MqttClient {
                 return true;
             }
             Err(_e) => {
-                error!("Unable to subscribe: {:?} on topics {:?}", self.mqtt_addr,subscriptions);
-                eprintln!("Unable to subscribe: {:?} on topics {:?}", self.mqtt_addr, subscriptions);
+                error!(
+                    "Unable to subscribe: {:?} on topics {:?}",
+                    self.mqtt_addr, subscriptions
+                );
+                eprintln!(
+                    "Unable to subscribe: {:?} on topics {:?}",
+                    self.mqtt_addr, subscriptions
+                );
                 process::exit(1);
             }
         }
@@ -127,12 +133,10 @@ impl MqttClient {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::any::TypeId;
     use super::*;
-
+    use std::any::TypeId;
 
     fn get_type_of<T: 'static>(_: &T) -> TypeId {
         TypeId::of::<T>()
@@ -144,11 +148,14 @@ mod tests {
             mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
             cli: None,
-            message_stream: None
+            message_stream: None,
         };
 
         client.build_mqtt_connection().await;
-        assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(client.cli.as_ref().unwrap()));
+        assert_eq!(
+            TypeId::of::<AsyncClient>(),
+            get_type_of(client.cli.as_ref().unwrap())
+        );
     }
 
     #[tokio::test]
@@ -157,11 +164,14 @@ mod tests {
             mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
             cli: None,
-            message_stream: None
+            message_stream: None,
         };
 
         client.build_mqtt_connection().await;
-        assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(client.cli.as_ref().unwrap()));
+        assert_eq!(
+            TypeId::of::<AsyncClient>(),
+            get_type_of(client.cli.as_ref().unwrap())
+        );
 
         let cli = client.cli.as_ref().unwrap();
         cli.disconnect(None);
@@ -175,7 +185,7 @@ mod tests {
             mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
             cli: None,
-            message_stream: None
+            message_stream: None,
         };
 
         client.build_mqtt_connection().await;

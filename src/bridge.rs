@@ -21,7 +21,7 @@ impl Bridge {
         let mut mqtt_client = MqttClient::new(settings.mqtt_settings).await;
         let valid = mqtt_client.subscribe().await;
 
-        let kafka_client = KafkaClient::new("127.0.0.1:9092".into());
+        let kafka_client = KafkaClient::new(settings.kafka_settings);
 
         while let Some(msg_opt) = mqtt_client.message_stream.next().await {
             if let Some(msg) = msg_opt {
@@ -58,7 +58,7 @@ mod tests {
     #[tokio::test]
     async fn test_bridge_message() {
         init();
-        let j = Bridge::new().await;
+        let j = Bridge::new(BridgeSettings::default()).await;
     }
 
     // #[tokio::test]

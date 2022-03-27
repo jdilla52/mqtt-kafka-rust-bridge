@@ -11,8 +11,8 @@ pub struct MqttSettings {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct KafkaSettings {
-    servers: String,
-    timeout_ms: i32,
+    pub(crate) servers: String,
+    pub(crate) timeout_ms: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]

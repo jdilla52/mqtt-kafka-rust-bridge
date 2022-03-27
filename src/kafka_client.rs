@@ -9,23 +9,23 @@ use rdkafka::consumer::StreamConsumer;
 use rdkafka::producer::future_producer::OwnedDeliveryResult;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::{ClientConfig, Message};
+use crate::config::KafkaSettings;
 
-#[derive(Clone)]
 pub struct KafkaClient {
-    brokers: String,
+    settings: KafkaSettings,
     pub(crate) producer: FutureProducer,
 }
 
 impl<'a> KafkaClient {
-    pub fn new(brokers: String) -> KafkaClient {
+    pub fn new(settings: KafkaSettings) -> KafkaClient {
         let producer: FutureProducer = ClientConfig::new()
-            .set("bootstrap.servers", &brokers)
-            .set("message.timeout.ms", "5000")
+            .set("bootstrap.servers", &settings.servers)
+            .set("message.timeout.ms", settings.timeout_ms.to_string())
             .create()
             .expect("Producer creation error");
 
         KafkaClient {
-            brokers: brokers,
+            settings,
             producer,
         }
     }
@@ -56,8 +56,8 @@ pub async fn send_kafka_message(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::any::TypeId;
     use crate::utils::init;
+    use std::any::TypeId;
 
     fn get_type_of<T: 'static>(_: &T) -> TypeId {
         TypeId::of::<T>()
@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn test_create_producer() {
-        let client = KafkaClient::new("127.0.0.1:9092".into());
+        let client = KafkaClient::new(KafkaSettings{servers:"127.0.0.1:9092".into(), timeout_ms:5000});
         assert_eq!(
             TypeId::of::<FutureProducer>(),
             get_type_of(&client.producer)
@@ -75,7 +75,7 @@ mod tests {
     #[tokio::test]
     async fn test_message() {
         init();
-        let j = KafkaClient::new("127.0.0.1:9092".into());
+        let j = KafkaClient::new(KafkaSettings{servers:"127.0.0.1:9092".into(), timeout_ms:5000});
         let out = send_kafka_message(
             j.producer,
             "test".to_string(),

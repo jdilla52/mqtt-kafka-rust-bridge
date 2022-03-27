@@ -11,6 +11,17 @@ pub struct MqttSettings {
     pub(crate) mqtt_qos: Vec<i32>,
 }
 
+impl Default for MqttSettings {
+    fn default() -> Self {
+        MqttSettings {
+            address: "tcp://127.0.0.1:1883".to_string(),
+            client_id: "test_client".to_string(),
+            mqtt_topic: vec!["#".to_string()],
+            mqtt_qos: vec![1],
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct KafkaSettings {
     pub(crate) servers: String,
@@ -18,6 +29,15 @@ pub struct KafkaSettings {
     pub(crate) kafka_topic: String,
 }
 
+impl Default for KafkaSettings {
+    fn default() -> Self {
+        KafkaSettings {
+            servers: "127.0.0.1:9092".to_string(),
+            timeout_ms: 5000,
+            kafka_topic: "*".to_string(),
+        }
+    }
+}
 // #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 // pub struct TopicSettings {
 //     mqtt_topic: Vec<String>,

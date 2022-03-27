@@ -62,11 +62,7 @@ mod tests {
 
     #[test]
     fn test_create_producer() {
-        let client = KafkaClient::new(KafkaSettings {
-            servers: "127.0.0.1:9092".into(),
-            timeout_ms: 5000,
-            kafka_topic: "".to_string(),
-        });
+        let client = KafkaClient::new(KafkaSettings::default());
         assert_eq!(
             TypeId::of::<FutureProducer>(),
             get_type_of(&client.producer)
@@ -76,11 +72,7 @@ mod tests {
     #[tokio::test]
     async fn test_message() {
         init();
-        let j = KafkaClient::new(KafkaSettings {
-            servers: "127.0.0.1:9092".into(),
-            timeout_ms: 5000,
-            kafka_topic: "".to_string(),
-        });
+        let j = KafkaClient::new(KafkaSettings::default());
         let out = send_kafka_message(
             j.producer,
             "test".to_string(),

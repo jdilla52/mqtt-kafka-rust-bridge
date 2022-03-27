@@ -85,7 +85,10 @@ impl MqttClient {
         // add config to ignore or add specific topics
         let resp = self
             .cli
-            .subscribe_many(self.settings.mqtt_topic.as_slice(),self.settings.mqtt_qos.as_ref())
+            .subscribe_many(
+                self.settings.mqtt_topic.as_slice(),
+                self.settings.mqtt_qos.as_ref(),
+            )
             .await;
         match resp {
             Ok(v) => {
@@ -131,25 +134,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_connection() {
-        let mut client = MqttClient::new(MqttSettings {
-            address: "tcp://127.0.0.1:1883".to_string(),
-            client_id: "test".to_string(),
-            mqtt_topic: vec![],
-            mqtt_qos: vec![1],
-        })
-        .await;
+        let mut client = MqttClient::new(MqttSettings::default()).await;
         assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(&client.cli));
     }
 
     #[tokio::test]
     async fn test_reconnect() {
-        let mut client = MqttClient::new(MqttSettings {
-            address: "tcp://127.0.0.1:1883".to_string(),
-            client_id: "test".to_string(),
-            mqtt_topic: vec![],
-            mqtt_qos: vec![],
-        })
-        .await;
+        let mut client = MqttClient::new(MqttSettings::default()).await;
         client.cli.disconnect(None);
         let reconnect = client.try_reconnect();
         assert!(reconnect);
@@ -157,13 +148,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_subscription() {
-        let mut client = MqttClient::new(MqttSettings {
-            address: "tcp://127.0.0.1:1883".to_string(),
-            client_id: "test".to_string(),
-            mqtt_topic: vec!["#".to_string()],
-            mqtt_qos: vec![1],
-        })
-        .await;
+        let mut client = MqttClient::new(MqttSettings::default()).await;
         let valid = client.subscribe().await;
         assert!(valid);
     }

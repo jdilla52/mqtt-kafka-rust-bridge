@@ -7,9 +7,17 @@ mod utils;
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+    use crate::bridge::Bridge;
+    use crate::config::BridgeSettings;
+
+    #[tokio::test]
+    async fn run_bridge() {
+        let cfg: BridgeSettings = confy::load("../config/default.conf").unwrap();
+        env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+        Bridge::new(cfg)
+            .await
+            // .spawn_api()
+            .run()
+            .await;
     }
 }

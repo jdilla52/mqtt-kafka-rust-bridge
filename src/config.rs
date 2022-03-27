@@ -50,7 +50,7 @@ impl Default for BridgeSettings {
                 timeout_ms: 5000,
             },
             topic_settings: TopicSettings {
-                mqtt_topic: "*".to_string(),
+                mqtt_topic: "#".to_string(),
                 kafka_topic: "*".to_string(),
             },
         }

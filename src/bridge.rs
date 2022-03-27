@@ -10,6 +10,8 @@ use uuid::Uuid;
 
 pub struct Bridge {
     config: BridgeSettings,
+    mqtt_client: MqttClient,
+    kafka_client: KafkaClient
 }
 
 fn mqtt_to_kafka_topic(v: &str) -> String {
@@ -19,13 +21,13 @@ fn mqtt_to_kafka_topic(v: &str) -> String {
 impl Bridge {
     pub async fn new(settings: BridgeSettings) {
         let mut mqtt_client = MqttClient::new(settings.mqtt_settings).await;
-        let valid = mqtt_client.subscribe().await;
-
+        let valid = mqtt_client.subscribe().await; // maybe move
         let kafka_client = KafkaClient::new(settings.kafka_settings);
-
-        while let Some(msg_opt) = mqtt_client.message_stream.next().await {
+    }
+    pub async fn run(&mut self) {
+        while let Some(msg_opt) = self.mqtt_client.message_stream.next().await {
             if let Some(msg) = msg_opt {
-                let l = kafka_client.producer.clone();
+                let l = self.kafka_client.producer.clone();
 
                 tokio::spawn(async move {
                     // generate kafka topic from mqtt topic
@@ -39,7 +41,7 @@ impl Bridge {
             } else {
                 // A "None" means we were disconnected. Try to reconnect...
                 println!("Lost connection. Attempting reconnect.");
-                mqtt_client.try_reconnect();
+                self.mqtt_client.try_reconnect();
             }
         }
     }

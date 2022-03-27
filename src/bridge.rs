@@ -107,12 +107,9 @@ impl Bridge {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils;
     use crate::utils::init;
     use std::any::TypeId;
-
-    fn get_type_of<T: 'static>(_: &T) -> TypeId {
-        TypeId::of::<T>()
-    }
 
     #[tokio::test]
     async fn test_bridge_message() {

@@ -34,7 +34,7 @@ pub async fn send_kafka_message(
     let produce_future = producer.send(record, Duration::from_millis(1)).await;
     return match produce_future {
         Ok(delivery) => {
-        debug!("Sent kafka message: {:?}", delivery);
+            debug!("Sent kafka message: {:?}", delivery);
             true
         }
         Err((e, _)) => {
@@ -48,19 +48,16 @@ pub async fn send_kafka_message(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils;
     use crate::utils::init;
     use std::any::TypeId;
-
-    fn get_type_of<T: 'static>(_: &T) -> TypeId {
-        TypeId::of::<T>()
-    }
 
     #[test]
     fn test_create_producer() {
         let client = KafkaClient::new(KafkaSettings::default());
         assert_eq!(
             TypeId::of::<FutureProducer>(),
-            get_type_of(&client.producer)
+            utils::get_type_of(&client.producer)
         );
     }
 

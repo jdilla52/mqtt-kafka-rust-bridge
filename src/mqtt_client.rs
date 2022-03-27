@@ -24,8 +24,16 @@ impl MqttClient {
             .finalize();
 
         let mut cli = mqtt::AsyncClient::new(create_opts).unwrap_or_else(|e| {
-            eprintln!("Error creating the mqtt client: {:?}, address: {}", e, settings.address.clone());
-            error!("Unable to connect mqtt client: {:?}, address: {}", e, settings.address.clone());
+            eprintln!(
+                "Error creating the mqtt client: {:?}, address: {}",
+                e,
+                settings.address.clone()
+            );
+            error!(
+                "Unable to connect mqtt client: {:?}, address: {}",
+                e,
+                settings.address.clone()
+            );
             process::exit(1);
         });
 
@@ -65,9 +73,10 @@ impl MqttClient {
 
         match rsp.connect_response() {
             Some(conn_rsp) => println!(
-                    "Connected to: '{}' with MQTT version {}",
-                    conn_rsp.server_uri, conn_rsp.mqtt_version),
-            _ => println!("existing session")
+                "Connected to: '{}' with MQTT version {}",
+                conn_rsp.server_uri, conn_rsp.mqtt_version
+            ),
+            _ => println!("existing session"),
         }
         MqttClient {
             settings,
@@ -120,16 +129,13 @@ impl MqttClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils;
     use std::any::TypeId;
-
-    fn get_type_of<T: 'static>(_: &T) -> TypeId {
-        TypeId::of::<T>()
-    }
 
     #[tokio::test]
     async fn test_connection() {
         let client = MqttClient::new(MqttSettings::default()).await;
-        assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(&client.cli));
+        assert_eq!(TypeId::of::<AsyncClient>(), utils::get_type_of(&client.cli));
     }
 
     #[tokio::test]

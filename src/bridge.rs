@@ -7,8 +7,15 @@ use std::process;
 use std::time::Duration;
 
 pub struct Bridge {}
-
+fn mqtt_to_kafka_topic(v: &str) -> String {
+    str::replace(v, "/", "-")
+}
 impl Bridge {
+
+
+
+
+
     pub async fn new() {
         let mut mqtt_client =
             MqttClient::new("tcp://127.0.0.1:1883".to_string(), "test".to_string()).await;
@@ -19,10 +26,13 @@ impl Bridge {
         while let Some(msg_opt) = mqtt_client.message_stream.next().await {
             if let Some(msg) = msg_opt {
                 let l = kafka_client.producer.clone();
+
                 tokio::spawn(async move {
                     // https://docs.rs/rdkafka/0.28.0/rdkafka/producer/struct.FutureProducer.html
                     // docs: clone producer to threads
-                    send_kafka_message(l, "test".into(), "lkjl".into(), msg.payload()).await;
+
+                    let topic = mqtt_to_kafka_topic(msg.topic());
+                    send_kafka_message(l, topic, "lkjl".into(), msg.payload()).await;
                 });
             } else {
                 // A "None" means we were disconnected. Try to reconnect...

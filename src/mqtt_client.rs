@@ -11,24 +11,16 @@ use std::{process, thread};
 pub struct MqttClient {
     mqtt_addr: String,
     client_id: String,
-    pub cli: Option<AsyncClient>,
-    pub message_stream: Option<AsyncReceiver<Option<Message>>>,
+    pub cli: AsyncClient,
+    pub message_stream: AsyncReceiver<Option<Message>>,
 }
 
 impl MqttClient {
-    pub fn new(mqtt_addr: String, client_id: String) -> MqttClient {
-        MqttClient {
-            mqtt_addr,
-            client_id,
-            cli: None,
-            message_stream: None,
-        }
-    }
-    pub async fn build_mqtt_connection(&mut self) -> &mut Self {
+    pub async fn new(mqtt_addr: String, client_id: String) -> MqttClient {
         info!("rbot is connecting");
         let create_opts = mqtt::CreateOptionsBuilder::new()
-            .server_uri(self.mqtt_addr.clone())
-            .client_id(self.client_id.clone())
+            .server_uri(mqtt_addr.clone())
+            .client_id(client_id.clone())
             .max_buffered_messages(100)
             .finalize();
 
@@ -60,14 +52,14 @@ impl MqttClient {
             .finalize();
 
         // Get message stream before connecting.
-        let mut stream = cli.get_stream(1024);
-        self.message_stream = Option::from(stream);
+        let mut message_stream = cli.get_stream(1024);
+        // self.message_stream = Option::from(stream);
 
         let rsp: ServerResponse = match cli.connect(conn_opts).await {
             Ok(r) => r,
             Err(e) => {
-                error!("Unable to connect: {:?}", self.mqtt_addr);
-                eprintln!("Unable to connect: {:?}", self.mqtt_addr);
+                error!("Unable to connect: {:?}", mqtt_addr);
+                eprintln!("Unable to connect: {:?}", mqtt_addr);
                 process::exit(1);
             }
         };
@@ -83,19 +75,19 @@ impl MqttClient {
                 println!("existing session");
             }
         }
-        self.cli = Option::from(cli);
-        self
+        MqttClient {
+            mqtt_addr,
+            client_id,
+            cli,
+            message_stream,
+        }
     }
     pub async fn subscribe(&self) -> bool {
         // add config to ignore or add specific topics
         let subscriptions = &["test"];
         let qos = &[1];
-        let cli = self.cli.as_ref().unwrap_or_else(|| {
-            println!("cant subscribe without an mqtt client please create a client");
-            process::exit(1);
-        });
 
-        let resp = cli.subscribe_many(subscriptions, qos).await;
+        let resp = self.cli.subscribe_many(subscriptions, qos).await;
         match resp {
             Ok(v) => {
                 let r = v.subscribe_many_response();
@@ -116,14 +108,10 @@ impl MqttClient {
     }
 
     pub fn try_reconnect(&self) -> bool {
-        let cli = self.cli.as_ref().unwrap_or_else(|| {
-            println!("cant reconnect without an mqtt client please create a client");
-            process::exit(1);
-        });
         println!("Connection lost. Waiting to retry connection");
         for _ in 0..12 {
             thread::sleep(Duration::from_millis(5000));
-            if cli.reconnect().wait().is_ok() {
+            if self.cli.reconnect().wait().is_ok() {
                 println!("Successfully reconnected");
                 return true;
             }
@@ -144,51 +132,24 @@ mod tests {
 
     #[tokio::test]
     async fn test_connection() {
-        let mut client = MqttClient {
-            mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
-            client_id: "test".to_string(),
-            cli: None,
-            message_stream: None,
-        };
-
-        client.build_mqtt_connection().await;
-        assert_eq!(
-            TypeId::of::<AsyncClient>(),
-            get_type_of(client.cli.as_ref().unwrap())
-        );
+        let mut client =
+            MqttClient::new("tcp://127.0.0.1:1883".to_string(), "test".to_string()).await;
+        assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(&client.cli));
     }
 
     #[tokio::test]
     async fn test_reconnect() {
-        let mut client = MqttClient {
-            mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
-            client_id: "test".to_string(),
-            cli: None,
-            message_stream: None,
-        };
-
-        client.build_mqtt_connection().await;
-        assert_eq!(
-            TypeId::of::<AsyncClient>(),
-            get_type_of(client.cli.as_ref().unwrap())
-        );
-
-        let cli = client.cli.as_ref().unwrap();
-        cli.disconnect(None);
+        let mut client =
+            MqttClient::new("tcp://127.0.0.1:1883".to_string(), "test".to_string()).await;
+        client.cli.disconnect(None);
         let reconnect = client.try_reconnect();
         assert!(reconnect);
     }
 
     #[tokio::test]
     async fn test_subscription() {
-        let mut client = MqttClient {
-            mqtt_addr: "tcp://127.0.0.1:1883".to_string(),
-            client_id: "test".to_string(),
-            cli: None,
-            message_stream: None,
-        };
-
-        client.build_mqtt_connection().await;
+        let mut client =
+            MqttClient::new("tcp://127.0.0.1:1883".to_string(), "test".to_string()).await;
         let valid = client.subscribe().await;
         assert!(valid);
     }

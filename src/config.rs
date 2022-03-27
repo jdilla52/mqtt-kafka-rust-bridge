@@ -7,14 +7,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct HttpSettings {
     pub(crate) address: String,
-    pub(crate) port: u32,
 }
 
 impl Default for HttpSettings {
     fn default() -> Self {
         HttpSettings {
             address: "127.0.0.1".to_string(),
-            port: 8080,
         }
     }
 }
@@ -136,8 +134,8 @@ mod tests {
         assert_eq!(t, BridgeSettings::from_json(&t.as_json()));
     }
 
-    #[test]
-    fn load_config() {
-        let _config: BridgeSettings = confy::load_path("../config/default.conf").unwrap();
-    }
+    // #[test]
+    // fn load_config() {
+    //     let _config: BridgeSettings = confy::load_path("../config/default.conf").unwrap();
+    // }
 }

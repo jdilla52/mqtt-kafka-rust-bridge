@@ -43,7 +43,7 @@ impl Default for BridgeSettings {
     fn default() -> Self {
         BridgeSettings{
             mqtt_settings: MqttSettings { address: "tcp://127.0.0.1:1883".to_string(), client_id: "test_client".to_string() },
-            kafka_settings: KafkaSettings { servers: "127.0.0.1:9092".to_string(), timeout_ms: 0 },
+            kafka_settings: KafkaSettings { servers: "127.0.0.1:9092".to_string(), timeout_ms: 5000 },
             topic_settings: TopicSettings { mqtt_topic: "*".to_string(), kafka_topic: "*".to_string() },
         }
     }
@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn load_config() {
-        let config: BridgeSettings = confy::load_path("config/.conf").unwrap();
+        let config: BridgeSettings = confy::load_path("../config/default.conf").unwrap();
     }
 }
 

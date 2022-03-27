@@ -3,13 +3,13 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::time::Duration;
 
+use crate::config::KafkaSettings;
 use rdkafka::config::RDKafkaLogLevel;
 use rdkafka::consumer::Consumer;
 use rdkafka::consumer::StreamConsumer;
 use rdkafka::producer::future_producer::OwnedDeliveryResult;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::{ClientConfig, Message};
-use crate::config::KafkaSettings;
 
 pub struct KafkaClient {
     settings: KafkaSettings,
@@ -24,10 +24,7 @@ impl<'a> KafkaClient {
             .create()
             .expect("Producer creation error");
 
-        KafkaClient {
-            settings,
-            producer,
-        }
+        KafkaClient { settings, producer }
     }
 }
 
@@ -65,7 +62,11 @@ mod tests {
 
     #[test]
     fn test_create_producer() {
-        let client = KafkaClient::new(KafkaSettings{servers:"127.0.0.1:9092".into(), timeout_ms:5000});
+        let client = KafkaClient::new(KafkaSettings {
+            servers: "127.0.0.1:9092".into(),
+            timeout_ms: 5000,
+            kafka_topic: "".to_string(),
+        });
         assert_eq!(
             TypeId::of::<FutureProducer>(),
             get_type_of(&client.producer)
@@ -75,7 +76,11 @@ mod tests {
     #[tokio::test]
     async fn test_message() {
         init();
-        let j = KafkaClient::new(KafkaSettings{servers:"127.0.0.1:9092".into(), timeout_ms:5000});
+        let j = KafkaClient::new(KafkaSettings {
+            servers: "127.0.0.1:9092".into(),
+            timeout_ms: 5000,
+            kafka_topic: "".to_string(),
+        });
         let out = send_kafka_message(
             j.producer,
             "test".to_string(),

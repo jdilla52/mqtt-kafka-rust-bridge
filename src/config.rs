@@ -7,25 +7,27 @@ use serde::{Deserialize, Serialize};
 pub struct MqttSettings {
     pub(crate) address: String,
     pub(crate) client_id: String,
+    pub(crate) mqtt_topic: Vec<String>,
+
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct KafkaSettings {
     pub(crate) servers: String,
     pub(crate) timeout_ms: i32,
+    pub(crate)  kafka_topic: String,
 }
+
+// #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+// pub struct TopicSettings {
+//     mqtt_topic: Vec<String>,
+//     kafka_topic: String,
+// }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-pub struct TopicSettings {
-    mqtt_topic: String,
-    kafka_topic: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct BridgeSettings {
     pub mqtt_settings: MqttSettings,
     pub kafka_settings: KafkaSettings,
-    pub topic_settings: TopicSettings,
 }
 
 impl BridgeSettings {
@@ -44,13 +46,11 @@ impl Default for BridgeSettings {
             mqtt_settings: MqttSettings {
                 address: "tcp://127.0.0.1:1883".to_string(),
                 client_id: "test_client".to_string(),
+                mqtt_topic: vec!["#".to_string()],
             },
             kafka_settings: KafkaSettings {
                 servers: "127.0.0.1:9092".to_string(),
                 timeout_ms: 5000,
-            },
-            topic_settings: TopicSettings {
-                mqtt_topic: "#".to_string(),
                 kafka_topic: "*".to_string(),
             },
         }
@@ -59,7 +59,7 @@ impl Default for BridgeSettings {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::{BridgeSettings, KafkaSettings, MqttSettings, TopicSettings};
+    use crate::config::{BridgeSettings, KafkaSettings, MqttSettings};
 
     #[test]
     fn test_parse() {
@@ -67,13 +67,11 @@ mod tests {
             mqtt_settings: MqttSettings {
                 address: "tcp://127.0.0.1:1883".to_string(),
                 client_id: "test_client".to_string(),
+                mqtt_topic: vec!["*".to_string()],
             },
             kafka_settings: KafkaSettings {
                 servers: "127.0.0.1:9092".to_string(),
                 timeout_ms: 0,
-            },
-            topic_settings: TopicSettings {
-                mqtt_topic: "*".to_string(),
                 kafka_topic: "*".to_string(),
             },
         };

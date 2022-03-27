@@ -134,6 +134,7 @@ mod tests {
         let mut client = MqttClient::new(MqttSettings {
             address: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
+            mqtt_topic: vec![]
         })
         .await;
         assert_eq!(TypeId::of::<AsyncClient>(), get_type_of(&client.cli));
@@ -144,6 +145,7 @@ mod tests {
         let mut client = MqttClient::new(MqttSettings {
             address: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
+            mqtt_topic: vec![]
         })
         .await;
         client.cli.disconnect(None);
@@ -156,6 +158,7 @@ mod tests {
         let mut client = MqttClient::new(MqttSettings {
             address: "tcp://127.0.0.1:1883".to_string(),
             client_id: "test".to_string(),
+            mqtt_topic: vec!["#".to_string()]
         })
         .await;
         let valid = client.subscribe().await;

@@ -1,49 +1,17 @@
 #![allow(dead_code)]
 
 use crate::config::BridgeSettings;
-use crate::kafka_client::{send_kafka_message, KafkaClient};
+use crate::kafka_client::{KafkaClient, send_kafka_message};
 use crate::mqtt_client::MqttClient;
+use crate::http_server::spawn_api;
+use crate::bridge_stats::BridgeStats;
 use futures::StreamExt;
 use log::{debug, error};
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
 use uuid::Uuid;
-extern crate serde;
 
-use crate::http_server::spawn_api;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct BridgeStats {
-    skipped_messages: i32,
-    routed_messages: i32,
-    errors: i32,
-    connection_error: i32,
-    start_time: SystemTime,
-}
-
-impl Default for BridgeStats {
-    fn default() -> Self {
-        BridgeStats {
-            skipped_messages: 0,
-            routed_messages: 0,
-            errors: 0,
-            connection_error: 0,
-            start_time: SystemTime::now(),
-        }
-    }
-}
-
-impl BridgeStats {
-    pub(crate) fn as_json(&self) -> String {
-        return serde_json::to_string(&self).unwrap();
-    }
-
-    fn from_json(s: &str) -> Self {
-        return serde_json::from_str(s).unwrap();
-    }
-}
 
 pub struct Bridge {
     settings: BridgeSettings,
@@ -131,18 +99,4 @@ mod tests {
         Bridge::new(BridgeSettings::default()).await;
     }
 
-    // #[tokio::test]
-    // async fn test_bridge_message() {
-    //     init();
-    //     let j = Bridge::new().await;
-    // }
-
-    // #[test]
-    // fn test_create_producer() {
-    //     let client = KafkaClient::new("127.0.0.1:9092".into());
-    //     assert_eq!(
-    //         TypeId::of::<FutureProducer>(),
-    //         get_type_of(&client.producer)
-    //     );
-    // }
 }

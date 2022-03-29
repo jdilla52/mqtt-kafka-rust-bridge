@@ -4,6 +4,7 @@ mod http_server;
 mod kafka_client;
 mod mqtt_client;
 mod utils;
+mod bridge_stats;
 
 #[cfg(test)]
 mod tests {
@@ -16,7 +17,6 @@ mod tests {
         env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
         Bridge::new(cfg)
             .await
-            // .spawn_api()
             .run()
             .await;
     }

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::bridge::BridgeStats;
+use crate::bridge_stats::BridgeStats;
 use crate::config::HttpSettings;
 use actix_web::web::Data;
 use actix_web::{http::Method, rt, web, App, Either, HttpResponse, HttpServer, Responder, Result};
